@@ -38,7 +38,7 @@ flowchart LR
 
 - **Hooks.** `scripts/install.py` registers `deck-hook` for `SessionStart`, `UserPromptSubmit`, `PermissionRequest`, `PostToolUse` and `Stop` in Claude Code and Codex, plus `StopFailure` in Claude Code and `SessionEnd` in Codex. Each event goes to the app over `~/Library/Application Support/agent-deck/deck.sock` as one line: `{"v":1,"tool":"claude","event":"PermissionRequest","wait":true,"payload":{…}}`. Only `PermissionRequest` waits for a reply (`{"output": …}`), which the hook prints as its decision. If the app is not running, the hook exits within about 0.1 s and the session carries on as if nothing were installed.
 - **Cursor's own agent.** Cursor also runs the hooks in `~/.claude/settings.json` for its built-in agent (Settings → Third-Party Imports). deck-hook ignores those calls. Claude Code gets no `SessionEnd` hook because Cursor makes a closing window wait for it; the deck notices an ended Claude session on its next scan instead.
-- **Discovery.** Open Cursor windows come from the Claude Code extension's lock files (`~/.claude/ide/*.lock`), live Claude sessions from `~/.claude/sessions`, Codex threads from `~/.codex/sessions`. Headless runs (`claude -p`, `codex exec`) are ignored.
+- **Discovery.** Open Cursor windows come from the Claude Code extension's lock files (`~/.claude/ide/*.lock`), live Claude sessions from `~/.claude/sessions`, Codex threads from `~/.codex/sessions`. Headless runs (`claude -p`, `codex exec`) are ignored, including a `claude -p` that a session starts from its own scripts.
 - **Jumping.** The window is raised with the `cursor` command, pointed at the folder, the saved `.code-workspace`, or for an untitled multi-root workspace the `workspace.json` Cursor keeps for it.
 - **Usage.** Claude: the Claude Code binary that ships inside the Cursor extension answers a `get_usage` control request (the same data as the extension's usage panel). Codex: `rate_limits` from local rollout files. agent-deck itself makes no network requests.
 
@@ -130,7 +130,7 @@ Other diagnostics: `diag/status`, `diag/dump` (inbox to the log), `diag/snapshot
 
 - **Hook**：`scripts/install.py` 在 Claude Code 和 Codex 里为 `SessionStart`、`UserPromptSubmit`、`PermissionRequest`、`PostToolUse`、`Stop` 注册 `deck-hook`，Claude Code 另加 `StopFailure`，Codex 另加 `SessionEnd`。每个事件通过 `~/Library/Application Support/agent-deck/deck.sock` 以一行 JSON 发给 app：`{"v":1,"tool":"claude","event":"PermissionRequest","wait":true,"payload":{…}}`。只有 `PermissionRequest` 会等待回复（`{"output": …}`），hook 把它作为决定输出。app 没在运行时，hook 约 0.1 秒内退出，会话照常进行，就像没装过一样。
 - **Cursor 自带的 Agent**：Cursor 也会拿 `~/.claude/settings.json` 里的 hook 去跑它自带的 Agent（设置 → Third-Party Imports），deck-hook 会忽略这些调用。Claude Code 不注册 `SessionEnd`，因为 Cursor 关窗时要等它跑完；Claude 会话结束改由 deck 下一次扫描发现。
-- **发现会话**：打开的 Cursor 窗口来自 Claude Code 插件的锁文件（`~/.claude/ide/*.lock`），存活的 Claude 会话来自 `~/.claude/sessions`，Codex 会话来自 `~/.codex/sessions`。无头运行（`claude -p`、`codex exec`）会被忽略。
+- **发现会话**：打开的 Cursor 窗口来自 Claude Code 插件的锁文件（`~/.claude/ide/*.lock`），存活的 Claude 会话来自 `~/.claude/sessions`，Codex 会话来自 `~/.codex/sessions`。无头运行（`claude -p`、`codex exec`）会被忽略，会话自己在脚本里起的 `claude -p` 也一样。
 - **跳转**：用 `cursor` 命令拉起窗口，参数是目录、已保存的 `.code-workspace`，或者未保存的多根 workspace 在 Cursor 里对应的 `workspace.json`。
 - **用量**：Claude 部分由 Cursor 插件自带的 Claude Code 程序响应 `get_usage` 控制请求，数据和插件的用量面板同源；Codex 部分读本地 rollout 文件里的 `rate_limits`。agent-deck 本身不发任何网络请求。
 

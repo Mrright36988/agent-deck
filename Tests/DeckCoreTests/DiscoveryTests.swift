@@ -20,6 +20,28 @@ import Testing
     #expect(ClaudeRegistry.parse(Data(#"{"pid": 1}"#.utf8)) == nil)
 }
 
+private func registered(_ pid: Int32, _ entrypoint: String = "claude-vscode") -> ClaudeSession {
+    ClaudeSession(pid: pid, sessionId: "s\(pid)", cwd: "/w", name: "", status: "busy", entrypoint: entrypoint)
+}
+
+@Test func claudeStartedByAnotherSessionIsNotAnIDESession() {
+    // Session 300's Bash tool runs a script (400 shell, 450 python) that runs `claude -p` (500).
+    let parents: [Int32: Int32] = [300: 200, 200: 1, 400: 300, 450: 400, 500: 450, 600: 1]
+    let live = ClaudeRegistry.liveIDESessions([registered(300), registered(500), registered(600, "sdk-cli")],
+                                             isAlive: { _ in true }, parent: { parents[$0] })
+    #expect(live.map(\.pid) == [300])
+}
+
+@Test func childOfARealProcessIsLeftOut() throws {
+    let child = Process()
+    child.executableURL = URL(fileURLWithPath: "/bin/sleep")
+    child.arguments = ["5"]
+    try child.run()
+    defer { child.terminate() }
+    #expect(ClaudeRegistry.parentPID(of: child.processIdentifier) == getpid())
+    #expect(ClaudeRegistry.liveIDESessions([registered(getpid()), registered(child.processIdentifier)]).map(\.pid) == [getpid()])
+}
+
 @Test func codexRolloutMetaIsParsedFromFirstLine() throws {
     let line = #"{"timestamp":"2026-10-29T09:33:26Z","type":"session_meta","payload":{"id":"01a18701","cwd":"/w/probe-ws","originator":"codex_vscode","cli_version":"0.164.0"}}"#
     let thread = try #require(CodexRollouts.parseMeta(firstLine: Data(line.utf8), file: URL(fileURLWithPath: "/tmp/r.jsonl")))

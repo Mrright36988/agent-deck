@@ -18,8 +18,8 @@ final class SessionDiscovery {
         switch envelope.tool {
         case .claude:
             if !claudeLive.contains(id) {
-                claudeLive = Set(ClaudeRegistry.load(directory: home.appendingPathComponent(".claude/sessions"))
-                    .filter { $0.isFromIDE && ClaudeRegistry.isAlive(pid: $0.pid) }.map(\.sessionId))
+                let registry = ClaudeRegistry.load(directory: home.appendingPathComponent(".claude/sessions"))
+                claudeLive = Set(ClaudeRegistry.liveIDESessions(registry).map(\.sessionId))
             }
             return claudeLive.contains(id)
         case .codex:
@@ -55,8 +55,7 @@ actor DiskScanner {
     }
 
     func liveClaudeSessions() -> [Found] {
-        ClaudeRegistry.load(directory: home.appendingPathComponent(".claude/sessions"))
-            .filter { $0.isFromIDE && ClaudeRegistry.isAlive(pid: $0.pid) }
+        ClaudeRegistry.liveIDESessions(ClaudeRegistry.load(directory: home.appendingPathComponent(".claude/sessions")))
             .map { Found(id: $0.sessionId, cwd: $0.cwd, title: claudeTitle(for: $0.sessionId), busy: $0.status == "busy",
                          activeAt: $0.activeAt) }
     }

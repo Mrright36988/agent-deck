@@ -28,6 +28,7 @@
 1. **会话列表**
    - 只列活着的 Cursor 插件会话：Claude 取 entrypoint=claude-vscode，Codex 取 originator=codex_vscode。
    - 过滤掉 headless 会话（`claude -p` 的 sdk-cli、`codex exec`）和子 agent。
+   - 会话自己在脚本里起的 `claude -p` 会继承 `CLAUDE_CODE_ENTRYPOINT=claude-vscode`，registry 里和插件会话一模一样（kind 也是 interactive），所以按进程祖先排除：祖先里有另一个已登记会话的，不算插件会话。
    - 每行显示：
      - 标题（Claude 取 aiTitle，Codex 取会话名或首句）；
      - 所在工作区和项目；

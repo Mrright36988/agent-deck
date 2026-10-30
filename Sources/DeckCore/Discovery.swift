@@ -67,8 +67,37 @@ public enum ClaudeRegistry {
         jsonFiles(in: directory, withExtension: "json").compactMap(parse)
     }
 
+    /// The live sessions running in an IDE. A `claude -p` that a session starts itself (a script run from a Bash
+    /// tool call) inherits that session's CLAUDE_CODE_ENTRYPOINT=claude-vscode, so it registers as an IDE session
+    /// too; it is told apart by another registered session among its ancestor processes.
+    public static func liveIDESessions(_ sessions: [ClaudeSession],
+                                       isAlive: (Int32) -> Bool = ClaudeRegistry.isAlive(pid:),
+                                       parent: (Int32) -> Int32? = ClaudeRegistry.parentPID(of:)) -> [ClaudeSession] {
+        let live = sessions.filter { isAlive($0.pid) }
+        let pids = Set(live.map(\.pid))
+        return live.filter { $0.isFromIDE && !descends(from: pids, pid: $0.pid, parent: parent) }
+    }
+
+    static func descends(from pids: Set<Int32>, pid: Int32, parent: (Int32) -> Int32?) -> Bool {
+        var current = pid
+        for _ in 0..<32 {
+            guard let next = parent(current), next > 1, next != current else { return false }
+            if pids.contains(next) { return true }
+            current = next
+        }
+        return false
+    }
+
     public static func isAlive(pid: Int32) -> Bool {
         kill(pid, 0) == 0 || errno == EPERM
+    }
+
+    public static func parentPID(of pid: Int32) -> Int32? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        guard sysctl(&mib, u_int(mib.count), &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        return info.kp_eproc.e_ppid
     }
 }
 
