@@ -45,6 +45,7 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(claude["permissions"], CLAUDE["permissions"])
         self.assertEqual(claude["hooks"]["UserPromptSubmit"][0], CLAUDE["hooks"]["UserPromptSubmit"][0])
         self.assertEqual(sorted(install.installed(claude)), sorted(install.CLAUDE_EVENTS))
+        self.assertNotIn("SessionEnd", claude["hooks"])  # Cursor would hold closing windows on it
         permission = claude["hooks"]["PermissionRequest"][0]["hooks"][0]
         self.assertEqual(permission["timeout"], 600)
         self.assertNotIn("async", permission)

@@ -43,7 +43,7 @@
      - PermissionRequest（包括 AskUserQuestion）= 等我处理；
      - UserPromptSubmit = 在跑；
      - Stop / StopFailure = 完成；
-     - SessionStart / SessionEnd 管会话的起止；
+     - SessionStart 管会话开始，会话结束看会话注册表。不挂 SessionEnd：Cursor 会拿 `~/.claude/settings.json` 里的 hook 跑它自带的 Agent，关窗时要等 SessionEnd hook 跑完，会把关窗卡住；
      - 会话注册表里的 busy/idle 兜底。
      - 不用 Notification(permission_prompt)：它要在审批框弹出约 6 秒后才触发。
    - Codex 的状态信号：Codex hooks（SessionStart、UserPromptSubmit、PermissionRequest、Stop）。不用 `notify`：它只能配一个，已经被 Codex Computer Use 占用。

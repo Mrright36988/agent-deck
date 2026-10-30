@@ -34,9 +34,11 @@ DEFAULT = Paths(
 MARK = "/.agent-deck/bin/deck-hook"
 
 # event -> (timeout seconds, run in background). Only PermissionRequest blocks: it waits for an answer.
+# No SessionEnd for Claude Code: Cursor also runs the hooks in ~/.claude/settings.json for its own agent and
+# holds a closing window until its SessionEnd hooks finish, which can hang. The app drops an ended Claude
+# session on its next scan of ~/.claude/sessions anyway.
 CLAUDE_EVENTS = {
     "SessionStart": (10, True),
-    "SessionEnd": (2, False),
     "UserPromptSubmit": (10, True),
     "PermissionRequest": (600, False),
     "PostToolUse": (10, True),

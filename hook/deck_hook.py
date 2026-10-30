@@ -6,6 +6,9 @@ Usage (from the hooks config): deck-hook <claude|codex> <EventName>
 Reads the hook input on stdin and sends it over the app's unix socket. For PermissionRequest it
 waits for the app's answer and prints it. Whenever the app is unreachable, or anything goes wrong,
 it exits 0 without output, so the session carries on as if agent-deck were not installed.
+
+Cursor also runs the hooks in ~/.claude/settings.json for its own agent. Those calls carry
+`cursor_version` in their input and are ignored: they are not Claude Code sessions.
 """
 import json
 import os
@@ -43,7 +46,10 @@ def forward(tool, event, payload):
 def main():
     tool, event = sys.argv[1], sys.argv[2]
     raw = sys.stdin.read()
-    output = forward(tool, event, json.loads(raw) if raw.strip() else {})
+    payload = json.loads(raw) if raw.strip() else {}
+    if "cursor_version" in payload:
+        return
+    output = forward(tool, event, payload)
     if output:
         sys.stdout.write(json.dumps(output, ensure_ascii=False))
 

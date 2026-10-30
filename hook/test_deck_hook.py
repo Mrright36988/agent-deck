@@ -83,6 +83,17 @@ class DeckHookTest(unittest.TestCase):
         self.assertFalse(deck.received["wait"])
         self.assertEqual(deck.received["payload"]["last_assistant_message"], "完成")
 
+    def test_cursor_agent_calls_are_ignored(self):
+        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server.bind(self.sock)
+        server.listen(1)
+        server.settimeout(0.3)
+        proc, _ = run_hook(self.sock, "claude", "Stop", '{"session_id": "c1", "cursor_version": "3.27.14"}')
+        with self.assertRaises(socket.timeout):
+            server.accept()
+        server.close()
+        self.assertEqual((proc.returncode, proc.stdout), (0, b""))
+
 
 if __name__ == "__main__":
     unittest.main()
